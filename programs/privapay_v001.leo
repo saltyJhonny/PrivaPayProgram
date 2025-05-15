@@ -1,7 +1,6 @@
-import credits.aleo;
 import token_registry.aleo;
 
-program privapay_v001.aleo {
+program privapay_v0001.aleo {
 
   record Employee {
         company_id: field,
@@ -11,6 +10,7 @@ program privapay_v001.aleo {
         token_id: field,
         start_date: u32,
         end_date: u32,
+        record_type: u8,
         claimable_salary: u128
   }
 
@@ -19,7 +19,18 @@ program privapay_v001.aleo {
         company_id: field,
         employee_id: field,
         employee_address: address,
+        record_type: u8,
         amount: u128
+  }
+
+  struct EmployeeSignatureInfo {
+        company_id: field,
+        employee_id: field,
+        employee_address: address,
+        token_id: field,
+        salary: u128,
+        start_period: u32,
+        end_period: u32
   }
 
   struct EmployeeInfo {
@@ -36,10 +47,15 @@ program privapay_v001.aleo {
     admin: address,
   }
 
-    struct CompanyOwner {
-    account: address,
-    company_id: field
+  record CompanyOwner {
+    company_id: field,
+    record_type: u8,
+    owner: address
   }
+
+  const COMPANY_OWNER_RECORD_TYPE: u8 = 0u8;
+  const EMPLOYEE_RECORD_TYPE: u8 = 1u8;
+  const EMPLOYEE_RECORD_FOR_ADMIN: u8 = 2u8;
 
 
  mapping registered_company: field => CompanyMetadata;
@@ -53,19 +69,22 @@ program privapay_v001.aleo {
 
  mapping admin_signature: field => signature;
 
-  const HR_ROLE: u8 = 1u8;
-  mapping roles: field => u8; // hash(token_id, account) => role
 
-
-  async transition register_company(public company_id: field,public company_name: u128) -> Future {
+  async transition register_company(public company_id: field,public company_name: u128) -> (CompanyOwner,Future) {
     let company: CompanyMetadata = CompanyMetadata {
       company_id: company_id,
       company_name: company_name,
       admin: self.caller
     };
 
+    let company_owner: CompanyOwner = CompanyOwner {
+      company_id: company.company_id,
+      record_type: COMPANY_OWNER_RECORD_TYPE,
+      owner: self.caller
+    };
+
     
-    return finalize_register_company(company);
+    return (company_owner, finalize_register_company(company));
   }
 
   async function finalize_register_company(company: CompanyMetadata) {
@@ -120,6 +139,7 @@ program privapay_v001.aleo {
       owner: employee_address,
       amount: salary,
       token_id: token_id,
+      record_type: EMPLOYEE_RECORD_TYPE,
       start_date: start_period,
       end_date: end_period,
       claimable_salary: salary
@@ -128,6 +148,7 @@ program privapay_v001.aleo {
       owner: self.signer,
       company_id: company_id,
       employee_id: employee_id,
+      record_type: EMPLOYEE_RECORD_FOR_ADMIN,
       employee_address: employee_address,
       amount: salary
     };
@@ -174,7 +195,7 @@ program privapay_v001.aleo {
     is_employee_registered.set(employee_hash, true);
 
     // check if employee is already active
-    let is_active: bool = is_employee_active.get(employee_hash);
+    let is_active: bool = is_employee_active.get_or_use(employee_hash,false);
     assert_eq(is_active, false);
     is_employee_active.set(employee_hash, true);
   }
@@ -232,6 +253,7 @@ program privapay_v001.aleo {
       owner: previous_record.owner,
       amount: salary,
       token_id: token_id,
+      record_type: EMPLOYEE_RECORD_TYPE,
       start_date: start_period,
       end_date: end_period,
       claimable_salary: salary + previous_record.claimable_salary
@@ -240,6 +262,7 @@ program privapay_v001.aleo {
     let for_admin: EmpRecForAdmin = EmpRecForAdmin {
       owner: admin,
       company_id: previous_record.company_id,
+      record_type: EMPLOYEE_RECORD_FOR_ADMIN,
       employee_id: previous_record.employee_id,
       employee_address: admin,
       amount: salary
@@ -251,14 +274,24 @@ program privapay_v001.aleo {
       employee_address: previous_record.owner,
       token_id: token_id
       });
+    
+    let signed_hash:field = BHP256::hash_to_field(EmployeeSignatureInfo {
+      company_id: previous_record.company_id,
+      employee_id: previous_record.employee_id,
+      employee_address: previous_record.owner,
+      token_id: token_id,
+      salary: salary,
+      start_period: start_period,
+      end_period: end_period
+      });
 
-    return (updated_employee,for_admin,finalize_update_employee(previous_record.company_id, self.caller, employee_hash, admin, signed_by_admin));
+    return (updated_employee,for_admin,finalize_update_employee(previous_record.company_id, self.caller, signed_hash, admin, signed_by_admin));
   }
 
   async function finalize_update_employee(
     company_id: field,
     caller: address,
-    employee_hash: field,
+    signed_hash: field,
     admin: address,
     signed_by_admin: signature
   ) {
@@ -267,7 +300,7 @@ program privapay_v001.aleo {
 
     let company: CompanyMetadata = registered_company.get(company_id);
     assert_eq(company.admin, admin);
-    let status: bool = signed_by_admin.verify(company.admin, employee_hash);
+    let status: bool = signed_by_admin.verify(company.admin, signed_hash);
     assert_eq(status, true);
   }
 
@@ -288,6 +321,7 @@ program privapay_v001.aleo {
       employee_id: employee_record.employee_id,
       owner: employee_record.owner,
       amount: employee_record.amount,
+      record_type: employee_record.record_type,
       token_id: employee_record.token_id,
       start_date: employee_record.start_date,
       end_date: employee_record.end_date,
@@ -306,14 +340,14 @@ program privapay_v001.aleo {
     assert(registered_company.contains(company_id));
 
     // check if employee is registered
-    assert_eq(is_employee_registered.get(employee_hash), true);
-    assert_eq(is_employee_active.get(employee_hash), true);
+    assert(is_employee_registered.get(employee_hash));
+    assert(is_employee_active.get(employee_hash));
 
     let last_claimed_by_user: u32 = latest_claim.get_or_use(employee_hash, start_date);
 
-    let last_claimed_amount: u128 = total_claimed.get_or_use(employee_hash, 0u128);
+    let total_claimed_amount: u128 = total_claimed.get_or_use(employee_hash, 0u128);
 
-    total_claimed.set(employee_hash, last_claimed_amount + withdraw_amount);
+    total_claimed.set(employee_hash, total_claimed_amount + withdraw_amount);
 
     let withdrawable_amount: u128 = (((block.height - last_claimed_by_user) / (end_date - start_date)) as u128) * salary;
 
