@@ -1,4 +1,6 @@
 import token_registry.aleo;
+import ans_registrar_v6.aleo;
+import credits.aleo;
 
 program privapay_v0001.aleo {
 
@@ -178,13 +180,6 @@ program privapay_v0001.aleo {
     // Check if the caller is the admin of the company
     assert_eq(company.admin, caller); 
 
-    // // Check if the caller has the HR role
-    // let caller_hash: field = BHP256::hash_to_field(CompanyOwner {
-    //   account: caller,
-    //   company_id: company_id
-    // });
-    // assert(roles.contains(caller_hash));
-
     // check if start height is greater or equal to the current height
     let currrent_height: u32 = block.height;
     assert(start_date >= currrent_height); 
@@ -198,6 +193,17 @@ program privapay_v0001.aleo {
     let is_active: bool = is_employee_active.get_or_use(employee_hash,false);
     assert_eq(is_active, false);
     is_employee_active.set(employee_hash, true);
+  }
+
+  async transition give_employee_name(name: [u128; 4], receiver: address, credits_record: credits.aleo/credits) -> Future {
+    // this is "ans" name hash, different TLDs have different name hash, and assigned to different registrars
+    let parent: field = 559532657689873513833888656958509165446284001025178663602770230581478239512field;
+    let employee_name: Future = ans_registrar_v6.aleo/register_fld_public(name, parent, receiver);
+    return finalize_give_employee_name(employee_name);
+  }
+
+  async function finalize_give_employee_name(f0: Future) {
+    f0.await();
   }
 
 
