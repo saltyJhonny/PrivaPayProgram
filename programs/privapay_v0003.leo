@@ -39,7 +39,7 @@ program privapay_v0003.aleo {
   struct EmployeeInfo {
         company_id: field,
         employee_id: field,
-        employee_address: address,
+        employee_name_field: field,
         token_id: field,
   }
 
@@ -176,7 +176,7 @@ program privapay_v0003.aleo {
       let employee_hash: field = BHP256::hash_to_field(EmployeeInfo {
       company_id: company_id,
       employee_id: employee_id,
-      employee_address: employee_address,
+      employee_name_field: employee_field,
       token_id: token_id
       });
     return (employee, for_admin, finalize_add_employee(company_id, employee_hash, start_period, end_period, self.signer, set_employee_ans, salary_transfer));  
@@ -218,7 +218,7 @@ program privapay_v0003.aleo {
   async transition generate_signature(
     company_id: field,
     employee_id: field,
-    employee_address: address,
+    employee_name_field: field,
     salary: u128,
     token_id: field,
     start_period: u32,
@@ -228,7 +228,7 @@ program privapay_v0003.aleo {
       let employee_hash: field = BHP256::hash_to_field(EmployeeInfo {
       company_id: company_id,
       employee_id: employee_id,
-      employee_address: employee_address,
+      employee_name_field: employee_name_field,
       token_id: token_id
       });
 
@@ -258,16 +258,14 @@ program privapay_v0003.aleo {
     end_period: u32,
     signed_by_admin: signature,
     admin: address,
-    name: [u128; 4],
     previous_record: Employee
   ) -> (Employee, EmpRecForAdmin, Future) {
 
-    let employee_field: field = calc_name_field(name, PARENT);
 
     let updated_employee: Employee = Employee {
       company_id: previous_record.company_id,
       employee_id: previous_record.employee_id,
-      employee_name_field: employee_field,
+      employee_name_field: previous_record.employee_name_field,
       owner: previous_record.owner,
       amount: salary,
       token_id: token_id,
@@ -282,14 +280,14 @@ program privapay_v0003.aleo {
       company_id: previous_record.company_id,
       record_type: EMPLOYEE_RECORD_FOR_ADMIN,
       employee_id: previous_record.employee_id,
-      employee_name_field: employee_field,
+      employee_name_field: previous_record.employee_name_field,
       amount: salary
     };
 
     let employee_hash: field = BHP256::hash_to_field(EmployeeInfo {
       company_id: previous_record.company_id,
       employee_id: previous_record.employee_id,
-      employee_address: previous_record.owner,
+      employee_name_field: previous_record.employee_name_field,
       token_id: token_id
       });
     
@@ -330,7 +328,7 @@ program privapay_v0003.aleo {
     let employee_hash: field = BHP256::hash_to_field(EmployeeInfo {
       company_id: employee_record.company_id,
       employee_id: employee_record.employee_id,
-      employee_address: employee_record.owner,
+      employee_name_field: employee_record.employee_name_field,
       token_id: employee_record.token_id
     });
 

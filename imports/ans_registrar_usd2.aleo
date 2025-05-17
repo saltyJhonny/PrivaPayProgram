@@ -1,17 +1,7 @@
-import ans_utils_v2.aleo;
 import aleo_name_service_registry_v4.aleo;
 import ans_coupon_card_v3.aleo;
 import credits.aleo;
 import multi_token_support_programv1.aleo;
-import mtsp_creditsv1.aleo;
-import pondo_oraclev1.aleo;
-import pondo_staked_aleo_tokenv1.aleo;
-import pondo_tokenv1.aleo;
-import pondo_delegator1v1.aleo;
-import pondo_delegator2v1.aleo;
-import pondo_delegator3v1.aleo;
-import pondo_delegator4v1.aleo;
-import pondo_delegator5v1.aleo;
 import pondo_core_protocolv1.aleo;
 
 program ans_registrar_usd2.aleo;

@@ -1,7 +1,7 @@
 import token_registry.aleo;
 import privapay_v0003.aleo;
 
-program privacypay_dao_V0003.aleo {
+program privacypay_dao_v0003.aleo {
 
     const ZERO_ADDRESS: address = aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc; 
 
@@ -189,10 +189,5 @@ program privacypay_dao_V0003.aleo {
             proposal_status.set(proposal_id, REJECTED);
         }
     }
-
-
-    
-
-
 
 }

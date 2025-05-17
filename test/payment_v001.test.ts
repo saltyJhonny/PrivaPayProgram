@@ -1,10 +1,9 @@
-import { ExecutionMode, js2leo } from "@doko-js/core";
+import { ExecutionMode } from "@doko-js/core";
 import { Privapay_v0003Contract } from "../artifacts/js/privapay_v0003";
 
 const mode = ExecutionMode.SnarkExecute;
 
-const privapay = new Privapay_v0003Contract({mode: mode});
-const dao = new 
+const privapay = new Privapay_v0003Contract({ mode: mode });
 
 
 const TIMEOUT = 300000_000;
@@ -20,9 +19,9 @@ describe("Payment Contract Test", () => {
     const [aleouser1, aleouser2, aleouser3, aleoUser4] = privapay.getAccounts();
 
     const company1_Metatadata = {
-    company_id: company_id,
-    company_name: company_name,
-    admin: aleouser1
+        company_id: company_id,
+        company_name: company_name,
+        admin: aleouser1
     }
 
     test("deploy", async () => {
@@ -30,10 +29,10 @@ describe("Payment Contract Test", () => {
         await deployTx.wait()
     }, TIMEOUT);
 
-    test("deploy", async () => {
-        const deployTx = await dao.deploy();
-        await deployTx.wait()
-    }, TIMEOUT);
+    // test("deploy", async () => {
+    //     const deployTx = await dao.deploy();
+    //     await deployTx.wait()
+    // }, TIMEOUT);
 
     // test("Register company", async () => {
     //     const tx = await paymentV001.register_company(company_id, company_name);
@@ -92,7 +91,7 @@ describe("Payment Contract Test", () => {
 
 
 
-    
+
 
     // test("deploy", async () => {}, TIMEOUT);
 
