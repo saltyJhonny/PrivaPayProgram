@@ -43,7 +43,7 @@ program privacypay_dao_v0003.aleo {
         id: u32,
         company_id: field,
         time_limit: u32,
-        detail_hash: field,
+        detail_hash: [field;2],
         proposer: address
     }
 
@@ -75,7 +75,7 @@ program privacypay_dao_v0003.aleo {
     }
 
 
-    async transition propose(public id: u32, company_id: field, time_limit: u32, detail_hash: field, token_record: token_registry.aleo/Token) -> Future{
+    async transition propose(public id: u32, company_id: field, time_limit: u32, detail_hash: [field;2], token_record: token_registry.aleo/Token) -> Future{
         let from: address = self.caller;
         assert_neq(from, ZERO_ADDRESS);
         let proposal: Proposal = Proposal {
