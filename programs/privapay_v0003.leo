@@ -1,12 +1,13 @@
 import token_registry.aleo;
-import ans_registrar_v6.aleo;
 import credits.aleo;
+import ans_registrar_usd2.aleo;
 
-program privapay_v0001.aleo {
+program privapay_v0003.aleo {
 
   record Employee {
         company_id: field,
         employee_id: field,
+        employee_name_field: field,
         owner: address,
         amount: u128,
         token_id: field,
@@ -20,7 +21,7 @@ program privapay_v0001.aleo {
         owner: address,
         company_id: field,
         employee_id: field,
-        employee_address: address,
+        employee_name_field: field,
         record_type: u8,
         amount: u128
   }
@@ -70,6 +71,9 @@ program privapay_v0001.aleo {
  mapping latest_claim: field => u32;
 
  mapping admin_signature: field => signature;
+
+ const PARENT: field = 559532657689873513833888656958509165446284001025178663602770230581478239512field;
+
 
 
   async transition register_company(public company_id: field,public company_name: u128) -> (CompanyOwner,Future) {
@@ -122,6 +126,15 @@ program privapay_v0001.aleo {
     registered_company.set(company_id, new_metadata);
   }
 
+
+  function calc_name_field(name: [u128; 4], parent: field) -> field {
+        let full_name: Name = Name {
+            name: name,
+            parent: parent
+        };
+      return Poseidon2::hash_to_field(full_name);
+  }
+
   async transition add_employee(
     company_id: field,
     employee_id: field,
@@ -130,14 +143,19 @@ program privapay_v0001.aleo {
     token_id: field,
     start_period: u32,
     end_period: u32,
+    name: [u128; 4],
+    timestamp: u64,
+    usd_price: u64,
   ) -> (Employee, EmpRecForAdmin, Future)
   { 
-
+    let set_employee_ans: Future = ans_registrar_usd2.aleo/register_fld_public(name, PARENT, employee_address, timestamp, usd_price);
+    let employee_field: field = calc_name_field(name, PARENT);
     let salary_transfer: Future = token_registry.aleo/transfer_public_as_signer(token_id, self.address, salary);
     assert(end_period > start_period);
     let employee: Employee = Employee {
       company_id: company_id,
       employee_id: employee_id,
+      employee_name_field: employee_field,
       owner: employee_address,
       amount: salary,
       token_id: token_id,
@@ -150,8 +168,8 @@ program privapay_v0001.aleo {
       owner: self.signer,
       company_id: company_id,
       employee_id: employee_id,
+      employee_name_field: employee_field, 
       record_type: EMPLOYEE_RECORD_FOR_ADMIN,
-      employee_address: employee_address,
       amount: salary
     };
 
@@ -161,7 +179,7 @@ program privapay_v0001.aleo {
       employee_address: employee_address,
       token_id: token_id
       });
-    return (employee, for_admin, finalize_add_employee(company_id, employee_hash, start_period, end_period, self.signer, salary_transfer));  
+    return (employee, for_admin, finalize_add_employee(company_id, employee_hash, start_period, end_period, self.signer, set_employee_ans, salary_transfer));  
   }
 
   async function finalize_add_employee(
@@ -170,9 +188,11 @@ program privapay_v0001.aleo {
     start_date: u32,
     end_date: u32,
     caller: address,
-    f0: Future
+    f0: Future,
+    f1: Future
   ) {
     f0.await();
+    f1.await();
     // Check if the registered_company is registered
     assert(registered_company.contains(company_id));
     let company: CompanyMetadata = registered_company.get(company_id);
@@ -194,18 +214,6 @@ program privapay_v0001.aleo {
     assert_eq(is_active, false);
     is_employee_active.set(employee_hash, true);
   }
-
-  async transition give_employee_name(name: [u128; 4], receiver: address, credits_record: credits.aleo/credits) -> Future {
-    // this is "ans" name hash, different TLDs have different name hash, and assigned to different registrars
-    let parent: field = 559532657689873513833888656958509165446284001025178663602770230581478239512field;
-    let employee_name: Future = ans_registrar_v6.aleo/register_fld_public(name, parent, receiver);
-    return finalize_give_employee_name(employee_name);
-  }
-
-  async function finalize_give_employee_name(f0: Future) {
-    f0.await();
-  }
-
 
   async transition generate_signature(
     company_id: field,
@@ -250,12 +258,16 @@ program privapay_v0001.aleo {
     end_period: u32,
     signed_by_admin: signature,
     admin: address,
+    name: [u128; 4],
     previous_record: Employee
   ) -> (Employee, EmpRecForAdmin, Future) {
+
+    let employee_field: field = calc_name_field(name, PARENT);
 
     let updated_employee: Employee = Employee {
       company_id: previous_record.company_id,
       employee_id: previous_record.employee_id,
+      employee_name_field: employee_field,
       owner: previous_record.owner,
       amount: salary,
       token_id: token_id,
@@ -270,7 +282,7 @@ program privapay_v0001.aleo {
       company_id: previous_record.company_id,
       record_type: EMPLOYEE_RECORD_FOR_ADMIN,
       employee_id: previous_record.employee_id,
-      employee_address: admin,
+      employee_name_field: employee_field,
       amount: salary
     };
 
@@ -325,6 +337,7 @@ program privapay_v0001.aleo {
     let employee: Employee = Employee {
       company_id: employee_record.company_id,
       employee_id: employee_record.employee_id,
+      employee_name_field: employee_record.employee_name_field,
       owner: employee_record.owner,
       amount: employee_record.amount,
       record_type: employee_record.record_type,
@@ -355,7 +368,7 @@ program privapay_v0001.aleo {
 
     total_claimed.set(employee_hash, total_claimed_amount + withdraw_amount);
 
-    let withdrawable_amount: u128 = (((block.height - last_claimed_by_user) / (end_date - start_date)) as u128) * salary;
+    let withdrawable_amount: u128 = ((block.height - last_claimed_by_user) as u128 * salary) /  (end_date - start_date) as u128 ;
 
     assert(withdrawable_amount >= withdraw_amount);
 
