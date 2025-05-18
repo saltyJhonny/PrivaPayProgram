@@ -1,6 +1,6 @@
-# 🛡️ PrivacyPay Protocol on Aleo
+# 🛡️ PrivaPay Protocol on Aleo
 
-**PrivacyPay** is a privacy-preserving, decentralized payroll and governance system built on the [Aleo blockchain](https://aleo.org). The protocol enables companies to manage employee compensation and internal governance through on-chain transitions while maintaining confidentiality using zero-knowledge proofs.
+**PrivaPay** is a privacy-preserving, decentralized payroll and governance system built on the [Aleo blockchain](https://aleo.org). The protocol enables companies to manage employee compensation and internal governance through on-chain transitions while maintaining confidentiality using zero-knowledge proofs.
 
 ## 📚 Table of Contents
 
@@ -11,15 +11,13 @@
 - [Governance Module – `privacypay_dao_v0005.aleo`](#-governance-module--privacypay_dao_v0005aleo)
 - [Workflows](#-workflows)
 - [Security](#-security)
-- [Dependencies](#-dependencies)
-- [License](#-license)
-- [Author](#-author)
 
 ---
 
 ## 🧩 Overview
 
-**PrivacyPay** introduces a modular protocol for managing:
+**PrivaPay** introduces a modular protocol for managing:
+
 - **Payroll**: Register companies, onboard employees, assign and update salaries, handle withdrawals.
 - **Governance**: Propose changes, cast token-weighted votes, and manage proposals securely.
 
@@ -70,25 +68,32 @@ This system is ideal for decentralized or remote organizations seeking blockchai
 - Double-voting prevention via hashed vote records
 - Close or cancel proposals by admin
 
+### ✅ [Verulink Bridge](https://verulink.com/)
 
-### ✅ Verulink Bridge
+- Used this bridge to import `vUSDC` from EVM to our `privapay` program.
+- Kudos to the team for the test tokens.
 
+### ✅ [ALEO NAME SERVER(ANS)](https://aleonames.id/)
 
-### ✅ ALEO NAME SERVER
+- For each employee, they will be only linked as their own `.ans` name.
 
+### ✅ [DOKOJS](https://github.com/venture23-aleo/doko-js#readme)
 
-### ✅ DOKJS FOR DEPLOYMENT AND TESTING
+- This tool was so helpful while deploying or testing the contract using JS library.
+- Kudos for creating an app like this.
 
 ---
 
 ## 💼 Payroll Module – `privapay_v0004.aleo`
 
 ### Records
+
 - `CompanyMetadata`: ID, name, and admin address
 - `Employee`: Full employment record including salary and time range
 - `EmpRecForAdmin`: View for administrative reporting
 
 ### Transitions
+
 - `register_company(company_id, company_name)`
 - `add_employee(...)`
 - `update_employee(...)`
@@ -96,6 +101,7 @@ This system is ideal for decentralized or remote organizations seeking blockchai
 - `withdraw_salary(employee_record, amount)`
 
 ### Internal Safeguards
+
 - Asserts company exists and admin matches
 - Verifies start and end periods
 - Verifies salary withdrawal is within claimable range
@@ -106,11 +112,13 @@ This system is ideal for decentralized or remote organizations seeking blockchai
 ## 🗳️ Governance Module – `privacypay_dao_v0005.aleo`
 
 ### Structures
+
 - `Proposal`: Metadata and hashed details for a proposal
 - `ProposalVote`: Unique vote hash per user/proposal
 - `VoteAcceptance`: Used to tally yes/no votes separately
 
 ### Transitions
+
 - `initialize(fee)`
 - `register(company_id, token_id, ...)` → Link DAO token to company
 - `give_vote_power(company_id, token_id, receiver, amount)`
@@ -120,6 +128,7 @@ This system is ideal for decentralized or remote organizations seeking blockchai
 - `cancel_proposal(...)` → Cancel by proposer or admin
 
 ### Proposal Lifecycle
+
 | Status     | Code |
 |------------|------|
 | Active     | 0    |
@@ -178,8 +187,6 @@ close_proposal(1u32, "company_xyz", true);
 - ✔️ Enforced proposal ID tracking to avoid overwrites
 
 ---
-
-
 
 ## 🙌 Contributions
 
