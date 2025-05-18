@@ -1,9 +1,9 @@
 import { ExecutionMode } from "@doko-js/core";
-import { Privapay_v0003Contract } from "../artifacts/js/privapay_v0003";
+import { Privapay_v0004Contract } from "../artifacts/js/privapay_v0004";
 
 const mode = ExecutionMode.SnarkExecute;
 
-const privapay = new Privapay_v0003Contract({ mode: mode });
+const privapay = new Privapay_v0004Contract({ mode: mode });
 
 
 const TIMEOUT = 300000_000;

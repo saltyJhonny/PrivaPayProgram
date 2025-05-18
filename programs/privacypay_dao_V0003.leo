@@ -1,5 +1,5 @@
 import token_registry.aleo;
-import privapay_v0003.aleo;
+import privapay_v0004.aleo;
 
 program privacypay_dao_v0003.aleo {
 
@@ -69,7 +69,7 @@ program privacypay_dao_v0003.aleo {
 
     async function finalize_register(company_id: field, token_id: field, from: address, f0: Future) {
         f0.await();
-        let company: CompanyMetadata = privapay_v0003.aleo/registered_company.get(company_id);
+        let company: CompanyMetadata = privapay_v0004.aleo/registered_company.get(company_id);
         assert_eq(company.admin, from);
         dao_token.set(company_id, token_id);
     }
@@ -162,7 +162,7 @@ program privacypay_dao_v0003.aleo {
 
     async function finalize_cancel_proposal(proposal_id: u32, from: address) {        
         let proposal: Proposal = proposals.get(proposal_id);
-        let company: CompanyMetadata = privapay_v0003.aleo/registered_company.get(proposal.company_id);
+        let company: CompanyMetadata = privapay_v0004.aleo/registered_company.get(proposal.company_id);
         assert(from == proposal.proposer || from == company.admin);
         proposal_status.set(proposal_id, CANCELLED);
     }
@@ -177,7 +177,7 @@ program privacypay_dao_v0003.aleo {
     async function finalize_close_proposal(proposal_id: u32, company_id: field, from: address, acceptanace: bool) {        
         let proposal: Proposal = proposals.get(proposal_id);
 
-        let company: CompanyMetadata = privapay_v0003.aleo/registered_company.get(company_id);
+        let company: CompanyMetadata = privapay_v0004.aleo/registered_company.get(company_id);
         assert_eq(company.admin, from);
 
         assert(block.height >= proposal.time_limit);

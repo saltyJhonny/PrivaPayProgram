@@ -2,7 +2,7 @@ import token_registry.aleo;
 import credits.aleo;
 import ans_registrar_usd2.aleo;
 
-program privapay_v0003.aleo {
+program privapay_v0004.aleo {
 
   record Employee {
         company_id: field,
