@@ -70,6 +70,15 @@ This system is ideal for decentralized or remote organizations seeking blockchai
 - Double-voting prevention via hashed vote records
 - Close or cancel proposals by admin
 
+
+### ✅ Verulink Bridge
+
+
+### ✅ ALEO NAME SERVER
+
+
+### ✅ DOKJS FOR DEPLOYMENT AND TESTING
+
 ---
 
 ## 💼 Payroll Module – `privapay_v0004.aleo`
