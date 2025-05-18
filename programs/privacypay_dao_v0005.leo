@@ -1,7 +1,7 @@
 import token_registry.aleo;
 import privapay_v0004.aleo;
 
-program privacypay_dao_v0003.aleo {
+program privacypay_dao_v0005.aleo {
 
     const ZERO_ADDRESS: address = aleo1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq3ljyzc; 
 
@@ -33,6 +33,8 @@ program privacypay_dao_v0003.aleo {
     const ACCEPTED: u8 = 1u8;
     const REJECTED: u8 = 2u8;
     const CANCELLED: u8 = 3u8;
+
+    const AUTHORIZED_UNTILL: u32 = 4294967295u32;
 
     struct VoteAcceptance {
         id: u32,
@@ -75,6 +77,18 @@ program privacypay_dao_v0003.aleo {
     }
 
 
+    async transition give_vote_power(company_id: field, token_id: field, receiver: address, amount: u128) ->  (token_registry.aleo/Token, Future) {
+        let mint: (token_registry.aleo/Token, Future) = token_registry.aleo/mint_private(token_id, receiver, amount, false, AUTHORIZED_UNTILL);
+        return (mint.0, finalize_give_vote_power(company_id, token_id, self.caller, mint.1));
+    }
+
+    async function finalize_give_vote_power(company_id: field, token_id: field, from: address, f0: Future) {
+        f0.await();
+        let company: CompanyMetadata = privapay_v0004.aleo/registered_company.get(company_id);
+        assert_eq(company.admin, from);
+        assert_eq(dao_token.get(company_id), token_id);
+    }
+
     async transition propose(public id: u32, company_id: field, time_limit: u32, detail_hash: [field;2], token_record: token_registry.aleo/Token) -> Future{
         let from: address = self.caller;
         assert_neq(from, ZERO_ADDRESS);
@@ -92,7 +106,7 @@ program privacypay_dao_v0003.aleo {
 
         assert_eq(dao_token.get(company_id), token_id);
 
-        let latest_id: u32 = latest_proposal_id.get(true) + 1u32; // todo 
+        let latest_id: u32 = latest_proposal_id.get_or_use(true, 0u32) + 1u32; // todo 
 
         assert_eq(proposal_id, latest_id);
 
@@ -118,7 +132,7 @@ program privacypay_dao_v0003.aleo {
     }
 
     async function finalize_vote(proposal_id: u32, company_id:field, vote: field, token_id: field, amount: u128, voting_power: u128, acceptance: bool) {
-        assert_eq(is_voted.get(vote), false);
+        assert_eq(is_voted.get_or_use(vote, false), false);
         assert_eq(dao_token.get(company_id), token_id);
         assert_eq(gov_token.get(proposal_id), token_id);
         let status: u8 = proposal_status.get(proposal_id);
@@ -139,7 +153,7 @@ program privacypay_dao_v0003.aleo {
         };
         let no_hash: field = BHP256::hash_to_field(no_voting);
 
-        let total_votes: u128 = acceptance ? votes.get(yes_hash) : votes.get(no_hash);
+        let total_votes: u128 = acceptance ? votes.get_or_use(yes_hash, 0u128) : votes.get_or_use(no_hash, 0u128);
 
         if (acceptance) {
             votes.set(yes_hash, total_votes + amount);
@@ -147,7 +161,7 @@ program privacypay_dao_v0003.aleo {
             votes.set(no_hash, total_votes + amount);
         }
 
-        voters.set(proposal_id, voters.get(proposal_id) + voting_power as u32);
+        voters.set(proposal_id, voters.get_or_use(proposal_id, 0u32) + 1u32);
 
         is_voted.set(vote, true);
 
